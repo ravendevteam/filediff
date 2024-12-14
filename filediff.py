@@ -1,6 +1,6 @@
 import sys
 import os
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QFile, QTextStream
 from PyQt5.QtGui import QFont, QTextOption, QTextCursor, QTextCharFormat, QColor
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QTextEdit, QLineEdit,
@@ -8,7 +8,6 @@ from PyQt5.QtWidgets import (
     QFormLayout, QDialogButtonBox, QMessageBox
 )
 from itertools import zip_longest
-
 
 class FileDiff(QMainWindow):
     def __init__(self):
@@ -24,6 +23,8 @@ class FileDiff(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
+        self.apply_stylesheet()
+
         main_widget = QWidget(self)
         main_layout = QVBoxLayout(main_widget)
 
@@ -93,6 +94,28 @@ class FileDiff(QMainWindow):
 
         self.setCentralWidget(main_widget)
         self.show()
+
+    def apply_stylesheet(self):
+        user_stylesheet_path = os.path.expanduser("~/fdstyle.css")
+        
+        if os.path.exists(user_stylesheet_path):
+            stylesheet_path = user_stylesheet_path
+        else:
+            stylesheet_path = self.get_default_stylesheet_path()
+
+        try:
+            with open(stylesheet_path, 'r') as file:
+                stylesheet = file.read()
+                self.setStyleSheet(stylesheet)
+        except Exception as e:
+            QMessageBox.warning(self, "Style Error", f"Failed to apply stylesheet: {e}")
+
+    def get_default_stylesheet_path(self):
+        if hasattr(sys, 'frozen'):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(__file__)
+        return os.path.join(base_path, 'style.css')
 
     def create_text_edit(self):
         text_edit = QTextEdit()
