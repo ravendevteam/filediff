@@ -2,7 +2,11 @@ import sys
 import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QTextOption, QTextCursor, QTextCharFormat, QColor
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QTextEdit, QLineEdit, QPushButton, QLabel, QMenuBar, QAction, QWidget, QFileDialog, QDialog, QFormLayout, QDialogButtonBox)
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QTextEdit, QLineEdit,
+    QPushButton, QLabel, QMenuBar, QAction, QWidget, QFileDialog, QDialog,
+    QFormLayout, QDialogButtonBox, QMessageBox
+)
 from itertools import zip_longest
 
 
@@ -15,7 +19,7 @@ class FileDiff(QMainWindow):
         self.color_only_left = "#41FF43"
         self.color_only_right = "#FF4141"
 
-        self.setWindowTitle("Raven FileDiff")
+        self.setWindowTitle("FileDiff")
         self.setGeometry(100, 100, 1000, 600)
         self.init_ui()
 
@@ -124,7 +128,7 @@ class FileDiff(QMainWindow):
                     self.text_edit_right.setPlainText(content)
                     self.status_bar_right.setText(f"Line count: {line_count} | Char count: {char_count} | Encoding: utf-8")
         except Exception as e:
-            print(f"Error loading file: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to load file: {e}")
 
     def update_left_file_display(self):
         file_path = self.path_input_left.text()
@@ -147,7 +151,7 @@ class FileDiff(QMainWindow):
         content_right = self.text_edit_right.toPlainText()
 
         if not content_left or not content_right:
-            print("One or both files are empty. Please load both files.")
+            QMessageBox.warning(self, "Comparison Error", "One or both files are empty. Please load both files.")
             return
 
         left_lines = content_left.splitlines()
@@ -219,7 +223,7 @@ class FileDiff(QMainWindow):
         cursor_right.setPosition(0)
 
         fmt = QTextCharFormat()
-        fmt.setBackground(QColor("yellow"))
+        fmt.setBackground(QColor("#FF8F1F"))
 
         while self.text_edit_left.find(search_term):
             self.text_edit_left.textCursor().mergeCharFormat(fmt)
