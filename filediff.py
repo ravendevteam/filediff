@@ -9,6 +9,33 @@ from PyQt5.QtWidgets import (
 )
 from itertools import zip_longest
 
+def loadStyle():
+    """Load CSS styles globally for the application."""
+    user_css_path = os.path.join(os.path.expanduser("~"), "fdstyle.css")
+    stylesheet = None
+    if os.path.exists(user_css_path):
+        try:
+            with open(user_css_path, 'r') as css_file:
+                stylesheet = css_file.read()
+            print(f"Loaded user CSS style from: {user_css_path}")
+        except Exception as e:
+            print(f"Error loading user CSS: {e}")
+    else:
+        css_file_path = os.path.join(os.path.dirname(__file__), 'style.css')
+        if getattr(sys, 'frozen', False):
+            css_file_path = os.path.join(sys._MEIPASS, 'style.css')
+        try:
+            with open(css_file_path, 'r') as css_file:
+                stylesheet = css_file.read()
+        except FileNotFoundError:
+            print(f"Default CSS file not found: {css_file_path}")
+    if stylesheet:
+        app = QApplication.instance()
+        if app:
+            app.setStyleSheet(stylesheet)
+        else:
+            print("No QApplication instance found. Stylesheet not applied.")
+
 class FileDiff(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -23,7 +50,6 @@ class FileDiff(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
-        self.apply_stylesheet()
 
         main_widget = QWidget(self)
         main_layout = QVBoxLayout(main_widget)
@@ -94,23 +120,6 @@ class FileDiff(QMainWindow):
 
         self.setCentralWidget(main_widget)
         self.show()
-
-    def apply_stylesheet(self):
-        stylesheet_path = self.get_default_stylesheet_path()
-
-        try:
-            with open(stylesheet_path, 'r') as file:
-                stylesheet = file.read()
-                self.setStyleSheet(stylesheet)
-        except Exception as e:
-            QMessageBox.warning(self, "Style Error", f"Failed to apply stylesheet: {e}")
-
-    def get_default_stylesheet_path(self):
-        if hasattr(sys, 'frozen'):
-            base_path = sys._MEIPASS
-        else:
-            base_path = os.path.dirname(__file__)
-        return os.path.join(base_path, 'style.css')
 
     def create_text_edit(self):
         text_edit = QTextEdit()
@@ -285,5 +294,6 @@ class FileDiff(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    loadStyle()
     viewer = FileDiff()
     sys.exit(app.exec_())
