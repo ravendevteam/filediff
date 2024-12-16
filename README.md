@@ -11,7 +11,7 @@ Made for Windows 10/11 and MacOS.
 Linux is likely functional, however it is not officially supported. Linux binaries will not be released officially, so you will need to compile from source yourself to obtain a linux executable.
 
 ## Installation
-See [Releases](https://github.com/ravendevteam/scratchpad/releases). Download the latest version for your platform (Windows or macOS currently available).
+See [Releases](https://github.com/ravendevteam/filediff/releases). Download the latest version for your platform (Windows or macOS currently available).
 
 To compile from source, make sure you have Python 3.12.4 or greater, and Nuitka, then run either `build.bat`, `build-macos.sh` or `build-linux.sh`, depending on your platform (Windows, MacOS, or Linux).
 
