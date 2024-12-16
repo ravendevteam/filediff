@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import (
 from itertools import zip_longest
 
 def loadStyle():
-    """Load CSS styles globally for the application."""
     user_css_path = os.path.join(os.path.expanduser("~"), "fdstyle.css")
     stylesheet = None
     if os.path.exists(user_css_path):
@@ -39,12 +38,10 @@ def loadStyle():
 class FileDiff(QMainWindow):
     def __init__(self):
         super().__init__()
-
         self.color_same = "#FFFFFF"
         self.color_different = "#FDFF41"
         self.color_only_left = "#41FF43"
         self.color_only_right = "#FF4141"
-
         self.setWindowTitle("FileDiff")
         self.setGeometry(100, 100, 1000, 600)
         self.init_ui()
@@ -53,36 +50,28 @@ class FileDiff(QMainWindow):
 
         main_widget = QWidget(self)
         main_layout = QVBoxLayout(main_widget)
-
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")
         clear_action = QAction("Clear Fields", self)
         clear_action.triggered.connect(self.clear_fields)
         file_menu.addAction(clear_action)
-        
         view_stats_action = QAction("View Statistics", self)
         view_stats_action.triggered.connect(self.view_statistics)
         file_menu.addAction(view_stats_action)
-        
         exit_action = QAction("Exit", self)
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
-
         edit_menu = menu_bar.addMenu("Edit")
         compare_action = QAction("Compare Files", self)
         compare_action.triggered.connect(self.compare_files)
         edit_menu.addAction(compare_action)
-
         find_action = QAction("Find", self)
         find_action.triggered.connect(self.open_find_dialog)
         edit_menu.addAction(find_action)
-
         clear_highlights_action = QAction("Clear Highlights", self)
         clear_highlights_action.triggered.connect(self.clear_highlights)
         edit_menu.addAction(clear_highlights_action)
-
         horizontal_layout = QHBoxLayout()
-
         left_layout = QVBoxLayout()
         self.path_input_left = QLineEdit()
         self.path_input_left.setPlaceholderText("Enter path for left file...")
@@ -93,7 +82,6 @@ class FileDiff(QMainWindow):
         left_layout.addWidget(self.path_input_left)
         left_layout.addWidget(self.open_button_left)
         left_layout.addWidget(self.text_edit_left)
-
         right_layout = QVBoxLayout()
         self.path_input_right = QLineEdit()
         self.path_input_right.setPlaceholderText("Enter path for right file...")
@@ -104,20 +92,15 @@ class FileDiff(QMainWindow):
         right_layout.addWidget(self.path_input_right)
         right_layout.addWidget(self.open_button_right)
         right_layout.addWidget(self.text_edit_right)
-
         horizontal_layout.addLayout(left_layout)
         horizontal_layout.addLayout(right_layout)
-
         self.status_bar_left = QLabel("Line count: 0 | Char count: 0 | Encoding: None")
         self.status_bar_right = QLabel("Line count: 0 | Char count: 0 | Encoding: None")
-
         status_layout = QHBoxLayout()
         status_layout.addWidget(self.status_bar_left)
         status_layout.addWidget(self.status_bar_right)
-
         main_layout.addLayout(horizontal_layout)
         main_layout.addLayout(status_layout)
-
         self.setCentralWidget(main_widget)
         self.show()
 
@@ -176,14 +159,11 @@ class FileDiff(QMainWindow):
     def compare_files(self):
         content_left = self.text_edit_left.toPlainText()
         content_right = self.text_edit_right.toPlainText()
-
         if not content_left or not content_right:
             QMessageBox.warning(self, "Comparison Error", "One or both files are empty. Please load both files.")
             return
-
         left_lines = content_left.splitlines()
         right_lines = content_right.splitlines()
-
         for i, (line_left, line_right) in enumerate(zip_longest(left_lines, right_lines, fillvalue='')):
             if line_left == line_right:
                 continue
@@ -229,15 +209,12 @@ class FileDiff(QMainWindow):
         dialog = QDialog(self)
         dialog.setWindowTitle("Find")
         layout = QFormLayout(dialog)
-
         search_input = QLineEdit()
         layout.addRow("Search for:", search_input)
-
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         layout.addWidget(buttons)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
-
         if dialog.exec_() == QDialog.Accepted:
             search_term = search_input.text()
             self.find_in_files(search_term)
@@ -245,13 +222,10 @@ class FileDiff(QMainWindow):
     def find_in_files(self, search_term):
         cursor_left = self.text_edit_left.textCursor()
         cursor_right = self.text_edit_right.textCursor()
-
         cursor_left.setPosition(0)
         cursor_right.setPosition(0)
-
         fmt = QTextCharFormat()
         fmt.setBackground(QColor("#FF8F1F"))
-
         while self.text_edit_left.find(search_term):
             self.text_edit_left.textCursor().mergeCharFormat(fmt)
 
@@ -261,14 +235,11 @@ class FileDiff(QMainWindow):
     def view_statistics(self):
         content_left = self.text_edit_left.toPlainText()
         content_right = self.text_edit_right.toPlainText()
-
         left_lines = content_left.splitlines()
         right_lines = content_right.splitlines()
-
         same_lines = 0
         different_lines = 0
         swapped_lines = 0
-
         for line_left, line_right in zip_longest(left_lines, right_lines, fillvalue=''):
             if line_left == line_right:
                 same_lines += 1
@@ -276,11 +247,9 @@ class FileDiff(QMainWindow):
                 different_lines += 1
             elif line_left != line_right:
                 swapped_lines += 1
-
         stats_dialog = QDialog(self)
         stats_dialog.setWindowTitle("View Statistics")
         layout = QFormLayout(stats_dialog)
-
         layout.addRow("Total Lines Left File:", QLabel(str(len(left_lines))))
         layout.addRow("Total Lines Right File:", QLabel(str(len(right_lines))))
         layout.addRow("Lines Same:", QLabel(str(same_lines)))
@@ -288,9 +257,7 @@ class FileDiff(QMainWindow):
         layout.addRow("Lines in Different Positions:", QLabel(str(swapped_lines)))
         layout.addRow("Character Count Left File:", QLabel(str(len(content_left))))
         layout.addRow("Character Count Right File:", QLabel(str(len(content_right))))
-
         stats_dialog.exec_()
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
