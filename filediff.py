@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (
     QFormLayout, QDialogButtonBox, QMessageBox
 )
 from itertools import zip_longest
+import chardet
 
 def loadStyle():
     user_css_path = os.path.join(os.path.expanduser("~"), "fdstyle.css")
@@ -127,16 +128,24 @@ class FileDiff(QMainWindow):
 
     def load_file(self, file_path, is_left):
         try:
-            with open(file_path, 'r', encoding='utf-8') as file:
+            with open(file_path, 'rb') as file:
+                raw_data = file.read()
+                detected = chardet.detect(raw_data)
+                encoding = detected.get('encoding', 'utf-8') or 'utf-8'
+            with open(file_path, 'r', encoding=encoding) as file:
                 content = file.read()
                 line_count = len([line for line in content.splitlines() if line.strip()])
                 char_count = len(content)
                 if is_left:
                     self.text_edit_left.setPlainText(content)
-                    self.status_bar_left.setText(f"Line count: {line_count} | Char count: {char_count} | Encoding: utf-8")
+                    self.status_bar_left.setText(
+                        f"Line count: {line_count} | Char count: {char_count} | Encoding: {encoding}"
+                    )
                 else:
                     self.text_edit_right.setPlainText(content)
-                    self.status_bar_right.setText(f"Line count: {line_count} | Char count: {char_count} | Encoding: utf-8")
+                    self.status_bar_right.setText(
+                        f"Line count: {line_count} | Char count: {char_count} | Encoding: {encoding}"
+                    )
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to load file: {e}")
 
