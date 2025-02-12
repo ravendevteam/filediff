@@ -75,6 +75,9 @@ class FileDiff(QMainWindow):
         self.binary_view_action = QAction("Binary View", self, checkable=True)
         self.binary_view_action.triggered.connect(self.toggle_binary_view)
         view_menu.addAction(self.binary_view_action)
+        self.join_scrollbars_action = QAction("Join Scrollbars", self, checkable=True)
+        self.join_scrollbars_action.triggered.connect(self.toggle_join_scrollbars)
+        view_menu.addAction(self.join_scrollbars_action)
         horizontal_layout = QHBoxLayout()
         left_layout = QVBoxLayout()
         self.path_input_left = QLineEdit()
@@ -314,6 +317,7 @@ class FileDiff(QMainWindow):
         stats_dialog.exec_()
 
     def toggle_binary_view(self):
+        self.clear_highlights()
         if not self.binary_view_action.isChecked():
             self.clear_highlights()
         self.update_left_file_display()
@@ -339,6 +343,20 @@ class FileDiff(QMainWindow):
                 self.text_edit_right.setPlainText(hex_dump)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to load binary file: {e}")
+    
+    def toggle_join_scrollbars(self):
+        if self.join_scrollbars_action.isChecked():
+            self.text_edit_right.verticalScrollBar().valueChanged.connect(self.sync_scroll_left)
+            self.text_edit_left.verticalScrollBar().valueChanged.connect(self.sync_scroll_right)
+        else:
+            self.text_edit_right.verticalScrollBar().valueChanged.disconnect(self.sync_scroll_left)
+            self.text_edit_left.verticalScrollBar().valueChanged.disconnect(self.sync_scroll_right)
+    
+    def sync_scroll_left(self, value):
+            self.text_edit_left.verticalScrollBar().setValue(value)
+
+    def sync_scroll_right(self, value):
+        self.text_edit_right.verticalScrollBar().setValue(value)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
