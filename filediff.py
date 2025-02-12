@@ -48,7 +48,6 @@ class FileDiff(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
-
         main_widget = QWidget(self)
         main_layout = QVBoxLayout(main_widget)
         menu_bar = self.menuBar()
@@ -72,6 +71,10 @@ class FileDiff(QMainWindow):
         clear_highlights_action = QAction("Clear Highlights", self)
         clear_highlights_action.triggered.connect(self.clear_highlights)
         edit_menu.addAction(clear_highlights_action)
+        view_menu = menu_bar.addMenu("View")
+        self.binary_view_action = QAction("Binary View", self, checkable=True)
+        self.binary_view_action.triggered.connect(self.toggle_binary_view)
+        view_menu.addAction(self.binary_view_action)
         horizontal_layout = QHBoxLayout()
         left_layout = QVBoxLayout()
         self.path_input_left = QLineEdit()
@@ -127,32 +130,71 @@ class FileDiff(QMainWindow):
             self.load_file(file_path, is_left=False)
 
     def load_file(self, file_path, is_left):
+        if self.binary_view_action.isChecked():
+            self.display_binary_view(is_left)
+            return
         try:
             with open(file_path, 'rb') as file:
                 raw_data = file.read()
                 detected = chardet.detect(raw_data)
                 encoding = detected.get('encoding', 'utf-8') or 'utf-8'
-            with open(file_path, 'r', encoding=encoding) as file:
-                content = file.read()
-                line_count = len([line for line in content.splitlines() if line.strip()])
-                char_count = len(content)
-                if is_left:
-                    self.text_edit_left.setPlainText(content)
-                    self.status_bar_left.setText(
-                        f"Line count: {line_count} | Char count: {char_count} | Encoding: {encoding}"
-                    )
-                else:
-                    self.text_edit_right.setPlainText(content)
-                    self.status_bar_right.setText(
-                        f"Line count: {line_count} | Char count: {char_count} | Encoding: {encoding}"
-                    )
+            try:
+                with open(file_path, 'r', encoding=encoding) as file:
+                    content = file.read()
+            except UnicodeDecodeError:
+                encoding, ok = self.get_encoding_from_user()
+                if not ok:
+                    return
+                with open(file_path, 'r', encoding=encoding) as file:
+                    content = file.read()
+            line_count = len([line for line in content.splitlines() if line.strip()])
+            char_count = len(content)
+            if is_left:
+                self.text_edit_left.setPlainText(content)
+                self.status_bar_left.setText(f"Line count: {line_count} | Char count: {char_count} | Encoding: {encoding}")
+            else:
+                self.text_edit_right.setPlainText(content)
+                self.status_bar_right.setText(f"Line count: {line_count} | Char count: {char_count} | Encoding: {encoding}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to load file: {e}")
+
+    def get_encoding_from_user(self):
+        encodings = ["utf-8", "latin-1", "ascii", "utf-16", "utf-16le", "utf-16be", "utf-32", "utf-32le", "utf-32be"]
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Select Encoding")
+        layout = QVBoxLayout(dialog)
+        label = QLabel("File could not be read. Select an encoding:")
+        layout.addWidget(label)
+        encoding_input = QLineEdit()
+        encoding_input.setPlaceholderText("Enter encoding (e.g., utf-8, latin-1)...")
+        layout.addWidget(encoding_input)
+        dropdown = QPushButton("Show Common Encodings")
+        layout.addWidget(dropdown)
+        encoding_list = QWidget()
+        encoding_layout = QVBoxLayout(encoding_list)
+        encoding_list.setLayout(encoding_layout)
+        for enc in encodings:
+            btn = QPushButton(enc)
+            btn.clicked.connect(lambda _, e=enc: encoding_input.setText(e))
+            encoding_layout.addWidget(btn)
+        encoding_list.setVisible(False)
+        dropdown.clicked.connect(lambda: encoding_list.setVisible(not encoding_list.isVisible()))
+        layout.addWidget(encoding_list)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        layout.addWidget(buttons)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        if dialog.exec_() == QDialog.Accepted:
+            return encoding_input.text(), True
+        return None, False
 
     def update_left_file_display(self):
         file_path = self.path_input_left.text()
         if os.path.isfile(file_path):
-            self.load_file(file_path, is_left=True)
+            if self.binary_view_action.isChecked():
+                self.display_binary_view(is_left=True)
+            else:
+                self.load_file(file_path, is_left=True)
         else:
             self.text_edit_left.clear()
             self.status_bar_left.setText("Line count: 0 | Char count: 0 | Encoding: None")
@@ -160,7 +202,10 @@ class FileDiff(QMainWindow):
     def update_right_file_display(self):
         file_path = self.path_input_right.text()
         if os.path.isfile(file_path):
-            self.load_file(file_path, is_left=False)
+            if self.binary_view_action.isChecked():
+                self.display_binary_view(is_left=False)
+            else:
+                self.load_file(file_path, is_left=False)
         else:
             self.text_edit_right.clear()
             self.status_bar_right.setText("Line count: 0 | Char count: 0 | Encoding: None")
@@ -267,6 +312,33 @@ class FileDiff(QMainWindow):
         layout.addRow("Character Count Left File:", QLabel(str(len(content_left))))
         layout.addRow("Character Count Right File:", QLabel(str(len(content_right))))
         stats_dialog.exec_()
+
+    def toggle_binary_view(self):
+        if not self.binary_view_action.isChecked():
+            self.clear_highlights()
+        self.update_left_file_display()
+        self.update_right_file_display()
+
+    def display_binary_view(self, is_left):
+        file_path = self.path_input_left.text() if is_left else self.path_input_right.text()
+        if not os.path.isfile(file_path):
+            return
+        try:
+            with open(file_path, 'rb') as file:
+                binary_data = file.read()
+                hex_lines = []
+                for i in range(0, len(binary_data), 16):
+                    chunk = binary_data[i:i+16]
+                    hex_part = ' '.join(f"{byte:02X}" for byte in chunk)
+                    ascii_part = ''.join(chr(byte) if 32 <= byte < 127 else '.' for byte in chunk)
+                    hex_lines.append(f"{i:08X}  {hex_part:<47}  {ascii_part}")
+                hex_dump = '\n'.join(hex_lines)
+            if is_left:
+                self.text_edit_left.setPlainText(hex_dump)
+            else:
+                self.text_edit_right.setPlainText(hex_dump)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to load binary file: {e}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
