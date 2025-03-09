@@ -1,3 +1,4 @@
+""" Import the necessary modules for the program to work """
 import sys
 import os
 from PyQt5.QtCore import Qt, QFile, QTextStream
@@ -10,6 +11,9 @@ from PyQt5.QtWidgets import (
 from itertools import zip_longest
 import chardet
 
+
+
+""" Function to load the CSS style for the program """
 def loadStyle():
     user_css_path = os.path.join(os.path.expanduser("~"), "fdstyle.css")
     stylesheet = None
@@ -36,6 +40,9 @@ def loadStyle():
         else:
             print("No QApplication instance found. Stylesheet not applied.")
 
+
+
+""" Main class for the program """
 class FileDiff(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -358,6 +365,9 @@ class FileDiff(QMainWindow):
     def sync_scroll_right(self, value):
         self.text_edit_right.verticalScrollBar().setValue(value)
 
+
+
+""" Main function to run the program """
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     loadStyle()
