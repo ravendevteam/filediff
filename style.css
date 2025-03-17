@@ -79,3 +79,8 @@ QScrollBar::handle:horizontal, QScrollBar::handle:vertical, QDialog QScrollBar::
     background: #cccccc;
     border-radius: 5px;
 }
+
+/* Preformatted text blocks for binary view */
+pre {
+    font-family: 'Cascadia Code', 'Courier New', Courier, monospace;
+}
